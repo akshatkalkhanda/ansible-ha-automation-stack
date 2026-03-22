@@ -353,6 +353,14 @@ ansible all -i inventory/hosts.ini -m ping
 
 ---
 
+## Author
+
+**Created by Akshat Kalkhanda**
+- **Git** : https://github.com/akshatkalkhanda/ansible-ha-automation-stack
+- **Email**: akshatkalkhanda@gmail.com
+
+---
+
 ## License
 
 MIT

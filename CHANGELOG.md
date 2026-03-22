@@ -59,4 +59,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `README.md` — ASCII architecture diagram, prerequisites table, full project structure tree, complete variable reference table for all five roles, step-by-step usage commands (full run, tag-scoped runs, dry-run, vault, connectivity check), roles summary table, and security considerations
 - `CHANGELOG.md` — this file, starting at v1.0.0
 
-[1.0.0]: https://github.com/your-org/ansible-ha-stack/releases/tag/v1.0.0
+[1.0.0]: https://github.com/akshatkalkhanda/ansible-ha-automation-stack/releases/tag/v1.0.0
