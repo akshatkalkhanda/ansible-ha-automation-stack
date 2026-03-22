@@ -1,0 +1,25 @@
+[Unit]
+Description=Prometheus Node Exporter
+Documentation=https://github.com/prometheus/node_exporter
+After=network.target
+
+[Service]
+User={{ node_exporter_user }}
+Group={{ node_exporter_group }}
+Type=simple
+ExecStart={{ node_exporter_install_dir }}/node_exporter \
+    --web.listen-address=":{{ node_exporter_port }}" \
+    --collector.textfile.directory={{ node_exporter_textfile_collector_dir }} \
+{% if node_exporter_enabled_collectors | length > 0 %}
+    --collector.{{ node_exporter_enabled_collectors | replace(',', ' --collector.') }} \
+{% endif %}
+{% if node_exporter_extra_args | length > 0 %}
+    {{ node_exporter_extra_args }} \
+{% endif %}
+    --collector.systemd
+Restart=on-failure
+RestartSec=5s
+SyslogIdentifier=node_exporter
+
+[Install]
+WantedBy=multi-user.target

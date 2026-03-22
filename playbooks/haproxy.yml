@@ -1,0 +1,25 @@
+---
+# haproxy.yml — Deploy HAProxy load balancer and Keepalived VIP on haproxy hosts
+# Usage: ansible-playbook -i inventory/hosts.ini playbooks/haproxy.yml
+# Usage (tags): ansible-playbook -i inventory/hosts.ini playbooks/haproxy.yml --tags haproxy
+#               ansible-playbook -i inventory/hosts.ini playbooks/haproxy.yml --tags keepalived
+
+- name: Deploy HAProxy on haproxy hosts
+  hosts: haproxy
+  become: true
+  gather_facts: true
+  tags: [haproxy]
+
+  roles:
+    - role: haproxy
+      tags: [haproxy]
+
+- name: Deploy Keepalived on haproxy hosts
+  hosts: haproxy
+  become: true
+  gather_facts: true
+  tags: [keepalived]
+
+  roles:
+    - role: keepalived
+      tags: [keepalived]

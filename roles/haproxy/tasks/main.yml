@@ -1,0 +1,56 @@
+---
+# HAProxy role — install, configure, and enable HAProxy
+
+- name: Install HAProxy package
+  ansible.builtin.apt:
+    name: "{{ haproxy_package }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  tags: [haproxy]
+
+- name: Ensure HAProxy config directory exists
+  ansible.builtin.file:
+    path: "{{ haproxy_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  tags: [haproxy]
+
+- name: Check if haproxy binary is available for config validation
+  ansible.builtin.stat:
+    path: "{{ haproxy_binary_path }}"
+  register: _haproxy_binary
+  check_mode: false
+  tags: [haproxy]
+
+- name: Deploy HAProxy configuration (with validation when binary exists)
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: "{{ haproxy_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+    validate: "{{ haproxy_binary_path }} -c -f %s"
+  notify: Restart HAProxy
+  when: _haproxy_binary.stat.exists
+  tags: [haproxy]
+
+- name: Deploy HAProxy configuration (without validation on first run / check mode)
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: "{{ haproxy_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart HAProxy
+  when: not _haproxy_binary.stat.exists
+  tags: [haproxy]
+
+- name: Enable and start HAProxy service
+  ansible.builtin.service:
+    name: "{{ haproxy_service }}"
+    enabled: true
+    state: started
+  tags: [haproxy]

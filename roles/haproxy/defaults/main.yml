@@ -1,0 +1,45 @@
+---
+# HAProxy role defaults — override in group_vars/haproxy.yml or host_vars
+
+haproxy_package: haproxy
+haproxy_service: haproxy
+haproxy_config_path: /etc/haproxy/haproxy.cfg
+haproxy_config_dir: /etc/haproxy
+haproxy_errors_dir: /etc/haproxy/errors
+haproxy_binary_path: /usr/sbin/haproxy
+
+# Process settings
+haproxy_user: haproxy
+haproxy_group: haproxy
+haproxy_chroot_dir: /var/lib/haproxy
+haproxy_socket_path: /run/haproxy/admin.sock
+haproxy_maxconn: 50000
+
+# Timeouts
+haproxy_timeout_connect: "5s"
+haproxy_timeout_client: "30s"
+haproxy_timeout_server: "30s"
+haproxy_stats_timeout: "30s"
+
+# Logging
+haproxy_log_socket: /dev/log
+haproxy_log_facility_global: local0
+haproxy_log_facility_notice: local1
+
+# Frontend settings
+haproxy_frontend_port: 80
+haproxy_frontend_name: http_front
+haproxy_default_backend: backend_api
+
+# Stats endpoint
+haproxy_stats_enabled: true
+haproxy_stats_port: 8404
+haproxy_stats_uri: /stats
+haproxy_stats_realm: "HAProxy Stats"
+haproxy_stats_auth_user: admin
+haproxy_stats_auth_pass: "changeme"
+haproxy_stats_refresh: "10s"
+
+# ACL routing rules and backend pools (defined in group_vars/haproxy.yml)
+haproxy_acl_routes: []
+haproxy_backends: []

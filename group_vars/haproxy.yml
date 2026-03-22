@@ -1,0 +1,133 @@
+---
+# ============================================================
+# HAProxy + Keepalived group variables
+# ============================================================
+
+# ----- HAProxy -----
+haproxy_package: haproxy
+haproxy_service: haproxy
+haproxy_config_path: /etc/haproxy/haproxy.cfg
+haproxy_config_dir: /etc/haproxy
+haproxy_errors_dir: /etc/haproxy/errors
+haproxy_binary_path: /usr/sbin/haproxy
+
+# Process settings
+haproxy_user: haproxy
+haproxy_group: haproxy
+haproxy_chroot_dir: /var/lib/haproxy
+haproxy_socket_path: /run/haproxy/admin.sock
+
+# Logging
+haproxy_log_socket: /dev/log
+haproxy_log_facility_global: local0
+haproxy_log_facility_notice: local1
+
+# Global / defaults tuning
+haproxy_maxconn: 50000
+haproxy_timeout_connect: "5s"
+haproxy_timeout_client: "30s"
+haproxy_timeout_server: "30s"
+haproxy_stats_timeout: "30s"
+
+# Stats endpoint
+haproxy_stats_enabled: true
+haproxy_stats_port: 8404
+haproxy_stats_uri: /stats
+haproxy_stats_realm: "HAProxy Stats"
+haproxy_stats_auth_user: admin
+haproxy_stats_auth_pass: "changeme"
+haproxy_stats_refresh: "10s"
+
+# Frontend listeners
+haproxy_frontend_port: 80
+haproxy_frontend_name: http_front
+
+# URL-based ACL routing rules
+# Each entry: { acl_name, path_prefix, backend_name }
+haproxy_acl_routes:
+  - acl_name: is_api
+    path_prefix: /api
+    backend_name: backend_api
+  - acl_name: is_static
+    path_prefix: /static
+    backend_name: backend_static
+  - acl_name: is_admin
+    path_prefix: /admin
+    backend_name: backend_admin
+
+# Default backend (used when no ACL matches)
+haproxy_default_backend: backend_api
+
+# Backend pools
+# Each backend: { name, balance, options: [], servers: [{name, host, port, options}] }
+haproxy_backends:
+  - name: backend_api
+    balance: roundrobin
+    options:
+      - option httpchk GET /healthz
+      - http-check expect status 200
+    servers:
+      - name: app1
+        host: 192.168.10.21
+        port: 8080
+        options: check inter 2s rise 2 fall 3
+      - name: app2
+        host: 192.168.10.22
+        port: 8080
+        options: check inter 2s rise 2 fall 3
+      - name: app3
+        host: 192.168.10.23
+        port: 8080
+        options: check inter 2s rise 2 fall 3
+
+  - name: backend_static
+    balance: leastconn
+    options:
+      - option httpchk GET /
+    servers:
+      - name: app1
+        host: 192.168.10.21
+        port: 8081
+        options: check inter 2s rise 2 fall 3
+      - name: app2
+        host: 192.168.10.22
+        port: 8081
+        options: check inter 2s rise 2 fall 3
+
+  - name: backend_admin
+    balance: source
+    options:
+      - option httpchk GET /admin/healthz
+    servers:
+      - name: app1
+        host: 192.168.10.21
+        port: 8082
+        options: check inter 2s rise 2 fall 3
+
+# ----- Keepalived -----
+keepalived_package: keepalived
+keepalived_service: keepalived
+keepalived_config_path: /etc/keepalived/keepalived.conf
+
+# Virtual IP (VIP) configuration
+keepalived_vip: 192.168.10.10
+keepalived_vip_cidr: 24
+keepalived_interface: eth0
+keepalived_vrrp_instance_name: VI_1
+keepalived_vrrp_id: 51
+keepalived_auth_pass: "K33pAl1v3!"
+
+# VRRP timing
+keepalived_advert_int: 1
+keepalived_preempt_delay: 5
+
+# Health check script for keepalived
+keepalived_check_script: /usr/local/bin/check_haproxy.sh
+keepalived_check_service: haproxy
+keepalived_check_interval: 2
+keepalived_check_fall: 3
+keepalived_check_rise: 2
+keepalived_check_weight: -20
+
+# Notification script (optional — leave empty to skip)
+keepalived_notify_script: ""

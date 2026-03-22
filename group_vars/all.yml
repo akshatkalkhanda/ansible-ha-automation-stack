@@ -1,0 +1,34 @@
+---
+# ============================================================
+# Global variables — applied to every host in the inventory
+# ============================================================
+
+# Ansible connection defaults
+ansible_user: ubuntu
+ansible_python_interpreter: /usr/bin/python3
+
+# ----- Node Exporter (installed on all hosts) -----
+node_exporter_version: "1.8.1"
+node_exporter_arch: amd64
+node_exporter_user: node_exporter
+node_exporter_group: node_exporter
+node_exporter_install_dir: /usr/local/bin
+node_exporter_port: 9100
+node_exporter_service: node_exporter
+node_exporter_textfile_collector_dir: /var/lib/node_exporter/textfile_collector
+node_exporter_systemd_unit_path: /etc/systemd/system/node_exporter.service
+
+# Download URL (override to use a local mirror)
+node_exporter_download_base_url: https://github.com/prometheus/node_exporter/releases/download
+node_exporter_download_url: "{{ node_exporter_download_base_url }}/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}.tar.gz"
+node_exporter_tmp_dir: /tmp
+node_exporter_extract_dir: "{{ node_exporter_tmp_dir }}/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}"
+
+# Extra collectors to enable (comma-separated list, empty = default set only)
+node_exporter_enabled_collectors: ""
+
+# Extra arguments for the node exporter binary
+node_exporter_extra_args: ""
+
+# Common system settings
+ntp_timezone: UTC

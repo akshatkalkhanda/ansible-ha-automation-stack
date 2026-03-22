@@ -1,0 +1,96 @@
+---
+# ============================================================
+# Monitoring group variables (Prometheus + Grafana)
+# ============================================================
+
+# ----- Prometheus -----
+prometheus_package: prometheus
+prometheus_service: prometheus
+prometheus_user: prometheus
+prometheus_group: prometheus
+prometheus_version: "2.52.0"
+prometheus_arch: amd64
+prometheus_install_dir: /usr/local/bin
+prometheus_config_dir: /etc/prometheus
+prometheus_data_dir: /var/lib/prometheus
+prometheus_config_path: "{{ prometheus_config_dir }}/prometheus.yml"
+prometheus_systemd_unit_path: /etc/systemd/system/prometheus.service
+prometheus_port: 9090
+prometheus_retention_time: 30d
+prometheus_log_level: info
+
+# Download URL (override to use a local mirror)
+prometheus_download_base_url: https://github.com/prometheus/prometheus/releases/download
+prometheus_download_url: "{{ prometheus_download_base_url }}/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-{{ prometheus_arch }}.tar.gz"
+prometheus_tmp_dir: /tmp
+prometheus_extract_dir: "{{ prometheus_tmp_dir }}/prometheus-{{ prometheus_version }}.linux-{{ prometheus_arch }}"
+
+# Global scrape configuration
+prometheus_global_scrape_interval: 15s
+prometheus_global_evaluation_interval: 15s
+prometheus_global_scrape_timeout: 10s
+
+# Scrape targets for node exporter
+# Each entry: { job_name, targets: [host:port, ...], labels: {key: val} }
+prometheus_scrape_configs:
+  - job_name: node_exporter
+    targets:
+      - "192.168.10.11:9100"
+      - "192.168.10.12:9100"
+      - "192.168.10.21:9100"
+      - "192.168.10.22:9100"
+      - "192.168.10.23:9100"
+      - "192.168.10.31:9100"
+    labels:
+      env: production
+
+  - job_name: haproxy_stats
+    targets:
+      - "192.168.10.11:8404"
+      - "192.168.10.12:8404"
+    labels:
+      env: production
+      role: haproxy
+
+  - job_name: prometheus
+    targets:
+      - "localhost:9090"
+    labels:
+      env: production
+      role: monitoring
+
+# Rule files (relative to prometheus_config_dir)
+prometheus_rule_files: []
+
+# Alertmanager integration (leave empty to disable)
+prometheus_alertmanager_url: ""
+
+# ----- Grafana -----
+grafana_package: grafana
+grafana_service: grafana-server
+grafana_user: grafana
+grafana_group: grafana
+grafana_config_dir: /etc/grafana
+grafana_config_file: "{{ grafana_config_dir }}/grafana.ini"
+grafana_data_dir: /var/lib/grafana
+grafana_port: 3000
+grafana_admin_user: admin
+grafana_admin_password: "Gr@fan4Admin!"
+grafana_allow_signup: false
+grafana_anonymous_access: false
+
+# Grafana apt repository
+grafana_apt_repo: "deb https://apt.grafana.com stable main"
+grafana_apt_key_url: https://apt.grafana.com/gpg.key
+
+# Datasource provisioning via URI module
+grafana_api_url: "http://localhost:{{ grafana_port }}"
+grafana_datasource_name: Prometheus
+grafana_datasource_type: prometheus
+grafana_datasource_url: "http://localhost:{{ prometheus_port }}"
+grafana_datasource_access: proxy
+grafana_datasource_is_default: true
+
+# Grafana API startup readiness wait
+grafana_startup_wait: 15
+grafana_startup_retries: 10

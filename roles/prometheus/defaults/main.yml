@@ -1,0 +1,35 @@
+---
+# Prometheus role defaults
+
+prometheus_package: prometheus
+prometheus_service: prometheus
+prometheus_user: prometheus
+prometheus_group: prometheus
+prometheus_version: "2.52.0"
+prometheus_arch: amd64
+prometheus_install_dir: /usr/local/bin
+prometheus_config_dir: /etc/prometheus
+prometheus_data_dir: /var/lib/prometheus
+prometheus_config_path: "{{ prometheus_config_dir }}/prometheus.yml"
+prometheus_port: 9090
+prometheus_retention_time: 30d
+prometheus_log_level: info
+
+prometheus_global_scrape_interval: 15s
+prometheus_global_evaluation_interval: 15s
+prometheus_global_scrape_timeout: 10s
+
+prometheus_scrape_configs: []
+prometheus_rule_files: []
+prometheus_alertmanager_url: ""
+
+# Systemd unit destination path
+prometheus_systemd_unit_path: /etc/systemd/system/prometheus.service
+
+# Temporary directory for downloads
+prometheus_tmp_dir: /tmp
+
+# Download URL — built from versioned variables, override to use a local mirror
+prometheus_download_base_url: https://github.com/prometheus/prometheus/releases/download
+prometheus_download_url: "{{ prometheus_download_base_url }}/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-{{ prometheus_arch }}.tar.gz"
+prometheus_extract_dir: "{{ prometheus_tmp_dir }}/prometheus-{{ prometheus_version }}.linux-{{ prometheus_arch }}"

@@ -1,0 +1,143 @@
+---
+# Grafana role — install, enable, and auto-provision Prometheus datasource
+
+- name: Install Grafana GPG key
+  ansible.builtin.apt_key:
+    url: "{{ grafana_apt_key_url }}"
+    state: present
+  tags: [grafana]
+
+- name: Add Grafana apt repository
+  ansible.builtin.apt_repository:
+    repo: "{{ grafana_apt_repo }}"
+    state: present
+    update_cache: true
+  tags: [grafana]
+
+- name: Install Grafana package
+  ansible.builtin.apt:
+    name: "{{ grafana_package }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  tags: [grafana]
+
+- name: Configure Grafana HTTP port
+  ansible.builtin.lineinfile:
+    path: "{{ grafana_config_file }}"
+    regexp: "^;?http_port\\s*="
+    line: "http_port = {{ grafana_port }}"
+    backrefs: true
+  notify: Restart Grafana
+  tags: [grafana]
+
+- name: Configure Grafana allow_sign_up
+  ansible.builtin.lineinfile:
+    path: "{{ grafana_config_file }}"
+    regexp: "^;?allow_sign_up\\s*="
+    line: "allow_sign_up = {{ grafana_allow_signup | lower }}"
+    backrefs: true
+  notify: Restart Grafana
+  tags: [grafana]
+
+- name: Configure Grafana admin user
+  ansible.builtin.lineinfile:
+    path: "{{ grafana_config_file }}"
+    regexp: "^;?admin_user\\s*="
+    line: "admin_user = {{ grafana_admin_user }}"
+    backrefs: true
+  notify: Restart Grafana
+  tags: [grafana]
+
+- name: Configure Grafana admin password
+  ansible.builtin.lineinfile:
+    path: "{{ grafana_config_file }}"
+    regexp: "^;?admin_password\\s*="
+    line: "admin_password = {{ grafana_admin_password }}"
+    backrefs: true
+  notify: Restart Grafana
+  tags: [grafana]
+
+- name: Enable and start Grafana service
+  ansible.builtin.service:
+    name: "{{ grafana_service }}"
+    enabled: true
+    state: started
+  tags: [grafana]
+
+- name: Flush handlers to apply config changes before API calls
+  ansible.builtin.meta: flush_handlers
+  tags: [grafana]
+
+# Datasource API provisioning is skipped in check mode:
+# The Grafana service may not be running on a fresh host during --check, and
+# URI calls would fail. The install + config tasks above already report what
+# would change, so check mode remains accurate and error-free.
+
+- name: Wait for Grafana API to become available
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/health"
+    method: GET
+    status_code: 200
+  register: _grafana_health
+  until: _grafana_health.status == 200
+  retries: "{{ grafana_startup_retries }}"
+  delay: "{{ grafana_startup_wait }}"
+  when: not ansible_check_mode
+  tags: [grafana]
+
+- name: Check if Prometheus datasource already exists in Grafana
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/datasources/name/{{ grafana_datasource_name | urlencode }}"
+    method: GET
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    status_code: [200, 404]
+  register: _grafana_ds_check
+  when: not ansible_check_mode
+  tags: [grafana]
+
+- name: Create Prometheus datasource in Grafana via API
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/datasources"
+    method: POST
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      name: "{{ grafana_datasource_name }}"
+      type: "{{ grafana_datasource_type }}"
+      url: "{{ grafana_datasource_url }}"
+      access: "{{ grafana_datasource_access }}"
+      isDefault: "{{ grafana_datasource_is_default }}"
+      jsonData:
+        timeInterval: "{{ prometheus_global_scrape_interval | default('15s') }}"
+    status_code: 200
+  when:
+    - not ansible_check_mode
+    - _grafana_ds_check.status == 404
+  tags: [grafana]
+
+- name: Update Prometheus datasource in Grafana via API (if already exists)
+  ansible.builtin.uri:
+    url: "{{ grafana_api_url }}/api/datasources/{{ _grafana_ds_check.json.id }}"
+    method: PUT
+    user: "{{ grafana_admin_user }}"
+    password: "{{ grafana_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      name: "{{ grafana_datasource_name }}"
+      type: "{{ grafana_datasource_type }}"
+      url: "{{ grafana_datasource_url }}"
+      access: "{{ grafana_datasource_access }}"
+      isDefault: "{{ grafana_datasource_is_default }}"
+      jsonData:
+        timeInterval: "{{ prometheus_global_scrape_interval | default('15s') }}"
+    status_code: 200
+  when:
+    - not ansible_check_mode
+    - _grafana_ds_check.status == 200
+  tags: [grafana]

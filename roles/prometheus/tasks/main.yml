@@ -1,0 +1,144 @@
+---
+# Prometheus role — install, configure, and enable Prometheus on monitoring host
+
+- name: Create prometheus system group
+  ansible.builtin.group:
+    name: "{{ prometheus_group }}"
+    system: true
+    state: present
+  tags: [prometheus]
+
+- name: Create prometheus system user
+  ansible.builtin.user:
+    name: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    system: true
+    shell: /sbin/nologin
+    create_home: false
+    state: present
+  tags: [prometheus]
+
+- name: Create prometheus directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: "0755"
+  loop:
+    - "{{ prometheus_config_dir }}"
+    - "{{ prometheus_data_dir }}"
+  tags: [prometheus]
+
+- name: Check if prometheus binary already exists with correct version
+  ansible.builtin.command:
+    cmd: "{{ prometheus_install_dir }}/prometheus --version"
+  register: _prometheus_version_check
+  changed_when: false
+  failed_when: false
+  # Run regardless of check mode so the 'when' guard below always has a valid result
+  check_mode: false
+  tags: [prometheus]
+
+- name: Download and install prometheus binary
+  block:
+    - name: Download prometheus tarball
+      ansible.builtin.get_url:
+        url: "{{ prometheus_download_url }}"
+        dest: "{{ prometheus_tmp_dir }}/prometheus-{{ prometheus_version }}.tar.gz"
+        mode: "0644"
+
+    - name: Extract prometheus tarball
+      ansible.builtin.unarchive:
+        src: "{{ prometheus_tmp_dir }}/prometheus-{{ prometheus_version }}.tar.gz"
+        dest: "{{ prometheus_tmp_dir }}"
+        remote_src: true
+
+    - name: Install prometheus and promtool binaries
+      ansible.builtin.copy:
+        src: "{{ prometheus_extract_dir }}/{{ item }}"
+        dest: "{{ prometheus_install_dir }}/{{ item }}"
+        owner: root
+        group: root
+        mode: "0755"
+        remote_src: true
+      loop:
+        - prometheus
+        - promtool
+      notify: Restart Prometheus
+
+    - name: Install prometheus console files
+      ansible.builtin.copy:
+        src: "{{ prometheus_extract_dir }}/{{ item }}"
+        dest: "{{ prometheus_config_dir }}/{{ item }}"
+        owner: "{{ prometheus_user }}"
+        group: "{{ prometheus_group }}"
+        mode: "0755"
+        remote_src: true
+      loop:
+        - consoles
+        - console_libraries
+
+    - name: Cleanup downloaded tarball
+      ansible.builtin.file:
+        path: "{{ prometheus_tmp_dir }}/prometheus-{{ prometheus_version }}.tar.gz"
+        state: absent
+  # Skip the install block entirely in check mode: binary paths may not exist yet,
+  # causing get_url/unarchive/copy failures. The version check above (check_mode: false)
+  # already reports what would happen. This keeps --check idempotent and error-free.
+  when:
+    - not ansible_check_mode
+    - >
+      (_prometheus_version_check.rc | default(1)) != 0 or
+      prometheus_version not in (_prometheus_version_check.stdout | default(''))
+  tags: [prometheus]
+
+- name: Check if promtool binary is available for config validation
+  ansible.builtin.stat:
+    path: "{{ prometheus_install_dir }}/promtool"
+  register: _promtool_binary
+  check_mode: false
+  tags: [prometheus]
+
+- name: Deploy Prometheus configuration (with validation when promtool exists)
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: "{{ prometheus_config_path }}"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: "0644"
+    validate: "{{ prometheus_install_dir }}/promtool check config %s"
+  notify: Restart Prometheus
+  when: _promtool_binary.stat.exists
+  tags: [prometheus]
+
+- name: Deploy Prometheus configuration (without validation on first run / check mode)
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: "{{ prometheus_config_path }}"
+    owner: "{{ prometheus_user }}"
+    group: "{{ prometheus_group }}"
+    mode: "0644"
+  notify: Restart Prometheus
+  when: not _promtool_binary.stat.exists
+  tags: [prometheus]
+
+- name: Deploy prometheus systemd unit file
+  ansible.builtin.template:
+    src: prometheus.service.j2
+    dest: "{{ prometheus_systemd_unit_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart Prometheus
+  tags: [prometheus]
+
+- name: Enable and start Prometheus service
+  ansible.builtin.systemd:
+    name: "{{ prometheus_service }}"
+    enabled: true
+    state: started
+    daemon_reload: true
+  tags: [prometheus]

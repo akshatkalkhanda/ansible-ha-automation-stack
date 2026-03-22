@@ -1,0 +1,23 @@
+[Unit]
+Description=Prometheus Monitoring System
+Documentation=https://prometheus.io/docs/introduction/overview/
+After=network.target
+
+[Service]
+User={{ prometheus_user }}
+Group={{ prometheus_group }}
+Type=simple
+ExecStart={{ prometheus_install_dir }}/prometheus \
+    --config.file={{ prometheus_config_path }} \
+    --storage.tsdb.path={{ prometheus_data_dir }} \
+    --storage.tsdb.retention.time={{ prometheus_retention_time }} \
+    --web.listen-address=":{{ prometheus_port }}" \
+    --web.console.libraries={{ prometheus_config_dir }}/console_libraries \
+    --web.console.templates={{ prometheus_config_dir }}/consoles \
+    --log.level={{ prometheus_log_level }}
+Restart=on-failure
+RestartSec=5s
+SyslogIdentifier=prometheus
+
+[Install]
+WantedBy=multi-user.target

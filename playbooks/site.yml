@@ -1,0 +1,21 @@
+---
+# site.yml — Master playbook: runs every component of the HA stack
+#
+# Run all components:
+#   ansible-playbook -i inventory/hosts.ini playbooks/site.yml
+#
+# Run only specific components via tags (tags are inherited by imported playbooks):
+#   ansible-playbook -i inventory/hosts.ini playbooks/site.yml --tags haproxy
+#   ansible-playbook -i inventory/hosts.ini playbooks/site.yml --tags keepalived
+#   ansible-playbook -i inventory/hosts.ini playbooks/site.yml --tags node_exporter
+#   ansible-playbook -i inventory/hosts.ini playbooks/site.yml --tags prometheus
+#   ansible-playbook -i inventory/hosts.ini playbooks/site.yml --tags grafana
+#
+# Dry-run (check mode):
+#   ansible-playbook -i inventory/hosts.ini playbooks/site.yml --check --diff
+
+- name: Import monitoring playbook (node_exporter + Prometheus + Grafana)
+  ansible.builtin.import_playbook: monitoring.yml
+
+- name: Import HAProxy + Keepalived playbook
+  ansible.builtin.import_playbook: haproxy.yml

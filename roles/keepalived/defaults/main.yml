@@ -1,0 +1,35 @@
+---
+# Keepalived role defaults — override in group_vars/haproxy.yml or host_vars
+
+keepalived_package: keepalived
+keepalived_service: keepalived
+keepalived_config_path: /etc/keepalived/keepalived.conf
+
+# Virtual IP (VIP) configuration
+keepalived_vip: 192.168.10.10
+keepalived_vip_cidr: 24
+keepalived_interface: eth0
+
+# VRRP instance settings
+keepalived_vrrp_instance_name: VI_1
+keepalived_vrrp_id: 51
+keepalived_auth_pass: "K33pAl1v3!"
+keepalived_advert_int: 1
+keepalived_preempt_delay: 5
+
+# These are set per-host in inventory (MASTER=110, BACKUP=100)
+keepalived_state: BACKUP
+keepalived_priority: 100
+
+# Health check script settings
+keepalived_check_script: /usr/local/bin/check_haproxy.sh
+# Name of the systemd service to check (used inside the health-check script)
+keepalived_check_service: haproxy
+keepalived_check_interval: 2
+keepalived_check_fall: 3
+keepalived_check_rise: 2
+# Weight adjustment applied when check fails (negative reduces priority)
+keepalived_check_weight: -20
+
+# Notification script (optional — leave empty to skip)
+keepalived_notify_script: ""

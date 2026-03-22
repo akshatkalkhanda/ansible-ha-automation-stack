@@ -1,0 +1,39 @@
+# prometheus.yml — managed by Ansible, do not edit manually
+# Generated for: {{ inventory_hostname }}
+
+global:
+  scrape_interval:     {{ prometheus_global_scrape_interval }}
+  evaluation_interval: {{ prometheus_global_evaluation_interval }}
+  scrape_timeout:      {{ prometheus_global_scrape_timeout }}
+
+{% if prometheus_rule_files | length > 0 %}
+rule_files:
+{% for rule_file in prometheus_rule_files %}
+  - "{{ prometheus_config_dir }}/{{ rule_file }}"
+{% endfor %}
+
+{% endif %}
+{% if prometheus_alertmanager_url | length > 0 %}
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - "{{ prometheus_alertmanager_url }}"
+
+{% endif %}
+scrape_configs:
+{% for job in prometheus_scrape_configs %}
+  - job_name: "{{ job.job_name }}"
+    static_configs:
+      - targets:
+{% for target in job.targets %}
+          - "{{ target }}"
+{% endfor %}
+{% if job.labels is defined and job.labels | length > 0 %}
+        labels:
+{% for label_key, label_val in job.labels.items() %}
+          {{ label_key }}: "{{ label_val }}"
+{% endfor %}
+{% endif %}
+
+{% endfor %}
