@@ -1,0 +1,9 @@
+---
+- name: Require a private haproxy credential before changing the host
+  ansible.builtin.assert:
+    that:
+      - "not haproxy_stats_enabled or (haproxy_stats_auth_pass is string and haproxy_stats_auth_pass | length >= 16)"
+      - "not haproxy_stats_enabled or (haproxy_stats_auth_pass is match('^\\S+$'))"
+    fail_msg: Supply a unique haproxy credential through Ansible Vault; see docs/credential-security.md.
+    quiet: true
+  no_log: true

@@ -1,6 +1,10 @@
 ---
 # Grafana role — install, enable, and auto-provision Prometheus datasource
 
+- name: Validate private credentials
+  ansible.builtin.import_tasks: validate.yml
+  tags: [grafana]
+
 - name: Install Grafana GPG key
   ansible.builtin.apt_key:
     url: "{{ grafana_apt_key_url }}"
@@ -55,8 +59,13 @@
     regexp: "^;?admin_password\\s*="
     line: "admin_password = {{ grafana_admin_password }}"
     backrefs: true
+    owner: root
+    group: grafana
+    mode: "0640"
   notify: Restart Grafana
   tags: [grafana]
+  no_log: true
+  diff: false
 
 - name: Enable and start Grafana service
   ansible.builtin.service:
@@ -97,6 +106,8 @@
   register: _grafana_ds_check
   when: not ansible_check_mode
   tags: [grafana]
+  no_log: true
+  diff: false
 
 - name: Create Prometheus datasource in Grafana via API
   ansible.builtin.uri:
@@ -119,6 +130,8 @@
     - not ansible_check_mode
     - _grafana_ds_check.status == 404
   tags: [grafana]
+  no_log: true
+  diff: false
 
 - name: Update Prometheus datasource in Grafana via API (if already exists)
   ansible.builtin.uri:
@@ -141,3 +154,5 @@
     - not ansible_check_mode
     - _grafana_ds_check.status == 200
   tags: [grafana]
+  no_log: true
+  diff: false

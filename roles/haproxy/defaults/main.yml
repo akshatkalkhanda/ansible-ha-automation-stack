@@ -37,7 +37,7 @@ haproxy_stats_port: 8404
 haproxy_stats_uri: /stats
 haproxy_stats_realm: "HAProxy Stats"
 haproxy_stats_auth_user: admin
-haproxy_stats_auth_pass: "changeme"
+haproxy_stats_auth_pass: ""  # Required: supply a deployment-specific value via Ansible Vault
 haproxy_stats_refresh: "10s"
 
 # ACL routing rules and backend pools (defined in group_vars/haproxy.yml)

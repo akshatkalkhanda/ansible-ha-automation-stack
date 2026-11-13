@@ -13,7 +13,7 @@ keepalived_interface: eth0
 # VRRP instance settings
 keepalived_vrrp_instance_name: VI_1
 keepalived_vrrp_id: 51
-keepalived_auth_pass: "K33pAl1v3!"
+keepalived_auth_pass: ""  # Required: supply a deployment-specific value via Ansible Vault
 keepalived_advert_int: 1
 keepalived_preempt_delay: 5
 

@@ -1,6 +1,10 @@
 ---
 # HAProxy role — install, configure, and enable HAProxy
 
+- name: Validate private credentials
+  ansible.builtin.import_tasks: validate.yml
+  tags: [haproxy]
+
 - name: Install HAProxy package
   ansible.builtin.apt:
     name: "{{ haproxy_package }}"
@@ -31,11 +35,13 @@
     dest: "{{ haproxy_config_path }}"
     owner: root
     group: root
-    mode: "0644"
+    mode: "0600"
     validate: "{{ haproxy_binary_path }} -c -f %s"
   notify: Restart HAProxy
   when: _haproxy_binary.stat.exists
   tags: [haproxy]
+  no_log: true
+  diff: false
 
 - name: Deploy HAProxy configuration (without validation on first run / check mode)
   ansible.builtin.template:
@@ -43,10 +49,12 @@
     dest: "{{ haproxy_config_path }}"
     owner: root
     group: root
-    mode: "0644"
+    mode: "0600"
   notify: Restart HAProxy
   when: not _haproxy_binary.stat.exists
   tags: [haproxy]
+  no_log: true
+  diff: false
 
 - name: Enable and start HAProxy service
   ansible.builtin.service:

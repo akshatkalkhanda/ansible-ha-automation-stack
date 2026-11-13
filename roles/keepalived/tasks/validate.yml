@@ -1,0 +1,10 @@
+---
+- name: Require a private keepalived credential before changing the host
+  ansible.builtin.assert:
+    that:
+      - "keepalived_auth_pass is string"
+      - "keepalived_auth_pass is match('^[A-Za-z0-9]{8}$')"
+      - "keepalived_auth_pass not in ['password', 'changeme', 'K33pAl1v']"
+    fail_msg: Supply a unique keepalived credential through Ansible Vault; see docs/credential-security.md.
+    quiet: true
+  no_log: true

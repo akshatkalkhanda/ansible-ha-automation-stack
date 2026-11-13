@@ -151,7 +151,7 @@ ansible-ha-stack/
 | `haproxy_stats_port` | `8404` | Stats listener port |
 | `haproxy_stats_uri` | `/stats` | Stats URI |
 | `haproxy_stats_auth_user` | `admin` | Stats basic-auth user |
-| `haproxy_stats_auth_pass` | `changeme` | Stats basic-auth password |
+| `haproxy_stats_auth_pass` | `required (Vault)` | Stats basic-auth password |
 | `haproxy_acl_routes` | `[]` | List of ACL routing rules (see below) |
 | `haproxy_backends` | `[]` | List of backend pool definitions (see below) |
 
@@ -182,7 +182,7 @@ ansible-ha-stack/
 | `keepalived_interface` | `eth0` | Network interface for VRRP |
 | `keepalived_vrrp_instance_name` | `VI_1` | VRRP instance identifier |
 | `keepalived_vrrp_id` | `51` | Virtual router ID (1–255, unique per LAN) |
-| `keepalived_auth_pass` | `K33pAl1v3!` | VRRP authentication passphrase |
+| `keepalived_auth_pass` | `required (Vault)` | VRRP authentication passphrase |
 | `keepalived_check_script` | `/usr/local/bin/check_haproxy.sh` | Health check script path |
 | `keepalived_check_interval` | `2` | Check interval (seconds) |
 | `keepalived_check_fall` | `3` | Failures before FAULT state |
@@ -228,7 +228,7 @@ ansible-ha-stack/
 | `grafana_package` | `grafana` | apt package name |
 | `grafana_port` | `3000` | HTTP listen port |
 | `grafana_admin_user` | `admin` | Admin username |
-| `grafana_admin_password` | `Gr@fan4Admin!` | Admin password (use vault in production) |
+| `grafana_admin_password` | `required (Vault)` | Admin password (use vault in production) |
 | `grafana_allow_signup` | `false` | Allow self-registration |
 | `grafana_datasource_name` | `Prometheus` | Datasource display name |
 | `grafana_datasource_url` | `http://localhost:9090` | Prometheus URL for Grafana |
@@ -364,3 +364,5 @@ ansible all -i inventory/hosts.ini -m ping
 ## License
 
 MIT
+
+Credential requirements: [private deployment credentials](docs/credential-security.md).

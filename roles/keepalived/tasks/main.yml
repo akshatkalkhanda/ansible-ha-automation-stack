@@ -1,6 +1,10 @@
 ---
 # Keepalived role — install, configure, and enable Keepalived (VRRP)
 
+- name: Validate private credentials
+  ansible.builtin.import_tasks: validate.yml
+  tags: [keepalived]
+
 - name: Install Keepalived package
   ansible.builtin.apt:
     name: "{{ keepalived_package }}"
@@ -39,9 +43,11 @@
     dest: "{{ keepalived_config_path }}"
     owner: root
     group: root
-    mode: "0644"
+    mode: "0600"
   notify: Restart Keepalived
   tags: [keepalived]
+  no_log: true
+  diff: false
 
 - name: Enable and start Keepalived service
   ansible.builtin.service:

@@ -1,0 +1,11 @@
+---
+- name: Require a private grafana credential before changing the host
+  ansible.builtin.assert:
+    that:
+      - "grafana_admin_password is string"
+      - "grafana_admin_password | length >= 16"
+      - "'\\n' not in grafana_admin_password"
+      - "'\\r' not in grafana_admin_password"
+    fail_msg: Supply a unique grafana credential through Ansible Vault; see docs/credential-security.md.
+    quiet: true
+  no_log: true
